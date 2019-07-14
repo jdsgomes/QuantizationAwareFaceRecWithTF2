@@ -1,4 +1,4 @@
-import tensorflo as tf
+import tensorflow as tf
 from pathlib import Path
 import sys
 from sklearn.model_selection import train_test_split
@@ -23,23 +23,27 @@ def get_fnames_and_labels(data_folder):
 
 def prepare_datasets(data_folder, batch_size):
 	fnames, labels, indexes_to_names, names_to_indexes = get_fnames_and_labels(data_folder)
-	train_fnames, val_fnames, train_labels, val_labels = train_test_split(fnames,
-                                                                            labels,
-                                                                            train_size=0.9,
-                                                                            random_state=128)
-	train_data = tf.data.Dataset.from_tensor_slices((tf.constant(train_fnames), tf.constant(train_labels)))
-	val_data = tf.data.Dataset.from_tensor_slices((tf.constant(val_fnames), tf.constant(val_labels)))
-	train_data = (train_data.map(load_and_preprocess_image)
-             .shuffle(buffer_size=10000)
-             .batch(batch_size)
-	     .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-	     .repeat()
-             )
-	val_data = (val_data.map(load_and_preprocess_image)
-           .batch(batch_size)
-	   .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-           .repeat()
-           )
+	train_fnames, val_fnames, train_labels, val_labels = \
+		train_test_split(fnames, labels, train_size=0.9, random_state=128)
+	train_data = tf.data.Dataset.from_tensor_slices(
+			(tf.constant(train_fnames), tf.constant(train_labels))
+	)
+	val_data = tf.data.Dataset.from_tensor_slices(
+			(tf.constant(val_fnames), tf.constant(val_labels))
+	)
+	train_data = (
+		train_data.map(load_and_preprocess_image)
+             	.shuffle(buffer_size=10000)
+             	.batch(batch_size)
+	     	.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+	     	.repeat()
+        )
+	val_data = (
+		val_data.map(load_and_preprocess_image)
+           	.batch(batch_size)
+	  	 .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+          	 .repeat()
+        )
 	return train_data, len(train_fnames), val_data, len(val_fnames), indexes_to_names, names_to_indexes
 
 def main(data_folder):
@@ -76,8 +80,8 @@ def main(data_folder):
 	history = model.fit(train_data,
           epochs = num_epochs,
           steps_per_epoch = steps_per_epoch,
-          validation_data=val_data, 
-          validation_steps =  val_steps
+          validation_data = val_data, 
+          validation_steps = val_steps
 	)
 	# plot accuracy and loss graphs
 	plt.plot(history.history['sparse_categorical_accuracy'])
@@ -87,6 +91,7 @@ def main(data_folder):
 	plt.xlabel('epoch')
 	plt.legend(['train', 'test'], loc='upper left')
 	plt.savefig('train_test_acc.png')
+	plt.close()
 	plt.plot(history.history['loss'])
 	plt.plot(history.history['val_loss'])
 	plt.title('model loss')
@@ -94,7 +99,7 @@ def main(data_folder):
 	plt.xlabel('epoch')
 	plt.legend(['train', 'test'], loc='upper left')
 	plt.savefig('train_test_loss.png')
-
+	plt.close()
 	
 
 if __name__ == '__main__':
