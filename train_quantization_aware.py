@@ -18,8 +18,8 @@ def get_fnames_and_labels(data_folder):
     labels = [str(x.parent.name) for x in fnames]
     fnames = [str(x) for x in fnames]
     unique_labels = set(labels)
-    indexes_to_names = dict((i, name) for name, i in zip(
-        unique_labels, range(len(unique_labels))))
+    indexes_to_names = dict((i, name) for name, i in zip(unique_labels, range(
+        len(unique_labels))))
     names_to_indexes = dict((name, i) for i, name in indexes_to_names.items())
     labels = [names_to_indexes[x] for x in labels]
     return fnames, labels, indexes_to_names, names_to_indexes
@@ -38,17 +38,17 @@ def prepare_datasets(data_folder, batch_size):
     )
     train_data = (
         train_data.map(load_and_preprocess_image)
-                 .shuffle(buffer_size=10000)
-                 .batch(batch_size)
-             .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-             .repeat()
-        )
+        .shuffle(buffer_size=10000)
+        .batch(batch_size)
+        .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        .repeat()
+    )
     val_data = (
         val_data.map(load_and_preprocess_image)
-               .batch(batch_size)
-           .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-               .repeat()
-        )
+        .batch(batch_size)
+        .prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        .repeat()
+    )
     return train_data, len(train_fnames), val_data, len(val_fnames), \
         indexes_to_names, names_to_indexes
 
@@ -56,39 +56,50 @@ def prepare_datasets(data_folder, batch_size):
 def main(data_folder):
     batch_size = 128
     lr = 0.0002
-    num_epochs = 10
-    # prapare dataset
-    train_data, n_train, val_data, n_val, indexes_to_names, \
-        names_to_indexes = prepare_datasets(data_folder, batch_size)
-    # load pre-trained model
-    base_model = tf.keras.applications.MobileNetV2(
-                                input_shape=(128,128,3),
-                                include_top=False,
-                                weights='imagenet'
-                            )
-    # Set the whole model to be trainable for simplicity
-    base_model.trainable = True
-    # add a last layer for this particular classification task
-    maxpool_layer = tf.keras.layers.GlobalMaxPooling2D()
-    prediction_layer = tf.keras.layers.Dense(
+
+    train_graph = tf.Graph()
+    train_sess = tf.compat.v1.Session(graph=train_graph)
+
+    tf.keras.backend.set_session(train_sess)
+    with train_graph.as_default():
+        tf.contrib.quantize.create_training_graph(
+            input_graph=train_graph, quant_delay=100
+        )
+        # prapare dataset
+        train_data, n_train, val_data, n_val, indexes_to_names, \
+            names_to_indexes = prepare_datasets(data_folder, batch_size)
+        # load pre-trained model
+        base_model = tf.keras.applications.MobileNetV2(
+            input_shape=(128,128,3),
+            include_top=False,
+            weights='imagenet'
+        )
+        # Set the whole model to be trainable for simplicity
+        base_model.trainable = True
+        # add a last layer for this particular classification task
+        maxpool_layer = tf.keras.layers.GlobalMaxPooling2D()
+        prediction_layer = tf.keras.layers.Dense(
         len(indexes_to_names), activation='softmax')
-    model = tf.keras.Sequential([base_model, maxpool_layer, prediction_layer])
-    # compile model
-    model.compile(
-        optimizer=tf.keras.optimizers.Adam(lr=lr),
-        loss=tf.keras.losses.sparse_categorical_crossentropy,
-        metrics=['sparse_categorical_accuracy']
-    )
-    # run trainning procedure
-    steps_per_epoch = round(n_train)//batch_size
-    val_steps = round(n_val)//batch_size
-    history = model.fit(
-        train_data,
-        epochs = num_epochs,
-        steps_per_epoch = steps_per_epoch,
-        validation_data = val_data,
-        validation_steps = val_steps
-    )
+        model = tf.keras.Sequential(
+            [base_model, maxpool_layer, prediction_layer])
+        # run trainning procedure
+        num_epochs = 10
+        steps_per_epoch = round(n_train)//batch_size
+        val_steps = round(n_val)//batch_size
+        train_sess.run(tf.global_variables_initializer())
+        # compile model
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(lr=lr),
+            loss=tf.keras.losses.sparse_categorical_crossentropy,
+            metrics=['sparse_categorical_accuracy']
+        )
+        history = model.fit(train_data,
+            epochs = num_epochs,
+            steps_per_epoch = steps_per_epoch,
+            validation_data = val_data,
+            validation_steps = val_steps
+        )
+
     # plot accuracy and loss graphs
     plt.plot(history.history['sparse_categorical_accuracy'])
     plt.plot(history.history['val_sparse_categorical_accuracy'])
@@ -96,7 +107,7 @@ def main(data_folder):
     plt.ylabel('accuracy')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig('train_test_acc.png')
+    plt.savefig('train_test_acc_quant_aware.png')
     plt.close()
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -104,7 +115,7 @@ def main(data_folder):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig('train_test_loss.png')
+    plt.savefig('train_test_loss_quant_aware.png')
     plt.close()
 
 
