@@ -22,4 +22,9 @@ The loss I would chose for a larger projet would be the triplet loss, which has 
 
 # Train & validation loss
 As seen in the graph bellow, te train loss lowered nicelly with every step. I trained for 10 epochs and the loss continually decayed.
+The validations loss stopped decaying around epoch 4, which indicates that the model stopped generalizing and starts to overfit slowly. 
+
 ![Losses plot](train_test_loss.png)
+
+# What was the effect of the quantization awareness within your training routine
+I introduced quantization awareness after 4 epochs (~14k iterations) to allow the model to be fully trainned first and then introduce the quatization aware finetuning of the trained model.
