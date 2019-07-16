@@ -63,7 +63,7 @@ def main(data_folder):
     tf.keras.backend.set_session(train_sess)
     with train_graph.as_default():
         tf.contrib.quantize.create_training_graph(
-            input_graph=train_graph, quant_delay=100
+            input_graph=train_graph, quant_delay=140000
         )
         # prapare dataset
         train_data, n_train, val_data, n_val, indexes_to_names, \
