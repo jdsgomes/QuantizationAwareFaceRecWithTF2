@@ -31,9 +31,20 @@ The validations loss stopped decaying around epoch 4, which indicates that the m
 
 ![Losses plot](train_test_loss.png)
 
+
+![Losses plot](train_test_acc.png)
+
 ## Quantization aware train and validation
 I introduced quantization awareness after 4 epochs (~14k iterations) to allow the model to be fully trainned first and then introduce the quatization aware finetuning of the trained model.
 
+Two observations form the loss/accuracy plots bellow:
+
+1. In this mode, the performance increase is slower than with the normal mode, but from the curves it seems that it is possible that by training longer we would achieve a similar performance.
+2. I would expect to see an effect on the curves after epoch 4 regarding the introduction of the quantization aware trainnig, but for some reason this effect shows up between epoch 1 and 2 in the loss curve. Unfortunatlly due to lack of time I didn't investigate this issue further. 
+
 In order to introduce the quantization aware training I used tensorflow 1.4 as in tf 2.0 there is no clear way to set the backend session for keras.
 
+
 ![Losses plot](train_test_loss_quant_aware.png)
+
+![Losses plot](train_test_acc_quant_aware.png)
