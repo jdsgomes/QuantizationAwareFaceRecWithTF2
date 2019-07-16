@@ -36,3 +36,4 @@ I introduced quantization awareness after 4 epochs (~14k iterations) to allow th
 
 In order to introduce the quantization aware training I used tensorflow 1.4 as in tf 2.0 there is no clear way to set the backend session for keras.
 
+![Losses plot](train_test_loss_quant_aware.png)
